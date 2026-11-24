@@ -21,7 +21,7 @@ pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
     name: brand::NAME,
     // The update cards say "LayerShop by …"; the installer's Manufacturer.
     developer: "Slavomir Durej",
-    repo: "SlavomirDurej/layershop",
+    repo: "nibiru2010-sys/layershop",
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png")),
     accent: Some([0x2f, 0x7b, 0xf5]),
     ..craft_update::suite::PHOTOCRAFT

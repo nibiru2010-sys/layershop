@@ -1,5 +1,11 @@
 //! Release checks against this fork's GitHub releases. Only public release metadata is requested.
 //!
+//! The feed is **this fork's** repository, never the one it was forked from: an update card that
+//! offered `SlavomirDurej/layershop` would send a fork build to somebody else's release, with
+//! none of this fork's work in it. A fork that has published no releases of its own reports no
+//! update (GitHub's 404 is "nothing newer", see `check`), which is the right answer until it
+//! does.
+//!
 //! Upstream checks `storytold/photocraft` through `craft-update`, which reads stable releases
 //! only. Every LayerShop release is a pre-release on `SlavomirDurej/layershop`, tagged
 //! `layershop-v0.10.0-preview.3`, so the whole release list is read here and the highest version
@@ -10,10 +16,13 @@
 use photocraft_engine::updates_cmds::{CheckFn, CheckResult, Release};
 use serde_json::Value;
 
+/// The GitHub repository this build reads releases from: this fork, not its upstream.
+pub const REPO: &str = "nibiru2010-sys/layershop";
+
 /// Every release of this fork, newest first.
-pub const FEED: &str = "https://api.github.com/repos/SlavomirDurej/layershop/releases?per_page=30";
+pub const FEED: &str = "https://api.github.com/repos/nibiru2010-sys/layershop/releases?per_page=30";
 /// Where people download releases; a release page off github.com is replaced by this.
-pub const RELEASES: &str = "https://github.com/SlavomirDurej/layershop/releases";
+pub const RELEASES: &str = "https://github.com/nibiru2010-sys/layershop/releases";
 
 pub fn service() -> CheckFn {
     Box::new(|| {
@@ -100,6 +109,16 @@ pub fn newer_release(body: &str, current: &str) -> CheckResult {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn the_feed_is_this_fork_and_never_its_upstream() {
+        assert!(FEED.contains(REPO), "the feed reads {REPO}: {FEED}");
+        assert!(RELEASES.contains(REPO), "the download page is {REPO}: {RELEASES}");
+        for upstream in ["SlavomirDurej/layershop", "storytold/photocraft"] {
+            assert!(!FEED.contains(upstream), "the feed must not read {upstream}: {FEED}");
+            assert!(!RELEASES.contains(upstream), "the download page must not be {upstream}: {RELEASES}");
+        }
+    }
 
     fn current() -> (u64, u64, u64) {
         parse_version(photocraft_engine::build_info::VERSION).unwrap()
