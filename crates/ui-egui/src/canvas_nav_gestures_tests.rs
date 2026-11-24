@@ -1,12 +1,8 @@
-//! The two navigation gestures of this fork, through the real canvas:
+//! The canvas's right-drag zoom (General > Right-Drag Zooms), through the real canvas:
 //!
-//! - General â€º Double-Click Centres the View: double-clicking the canvas with the Hand puts the
-//!   point clicked in the middle of the window, keeping the zoom;
-//! - General â€º Right-Drag Zooms: holding the right button (a pen's barrel button comes through as
-//!   one) and dragging vertically zooms about the point pressed â€” down zooms in, up zooms out.
-//!
-//! Both have a preference that turns them off, and a right-click that doesn't move must stay a
-//! right-click.
+//! Holding the right button and dragging vertically zooms about the point pressed: down zooms in,
+//! up zooms out. The preference turns it off, a right-click that doesn't move must stay a
+//! right-click, and the Hand keeps its right-drag pan.
 
 use egui::{Modifiers, PointerButton, Pos2, vec2};
 use egui_kittest::Harness;
@@ -26,8 +22,8 @@ fn app_with_photo() -> PhotocraftApp {
 }
 
 fn harness(app: PhotocraftApp) -> Harness<'static, PhotocraftApp> {
-    // 50 ms a frame: a double-click is two clicks inside egui's 300 ms window, and the default
-    // quarter-second step would put them past it.
+    // 50 ms a frame: a drag's steps stay under the click distance and the reach below, where the
+    // default quarter-second step makes every gesture look slow.
     let mut h = Harness::builder().with_size(vec2(900.0, 600.0)).with_step_dt(0.05).build_ui_state(
         |ui, app: &mut PhotocraftApp| {
             let ctx = ui.ctx().clone();
@@ -48,10 +44,6 @@ fn harness(app: PhotocraftApp) -> Harness<'static, PhotocraftApp> {
     v.fill_pending = false;
     h.run_steps(2);
     h
-}
-
-fn centre(h: &Harness<'static, PhotocraftApp>) -> [f32; 2] {
-    h.state().ui.views[0].center
 }
 
 fn zoom(h: &Harness<'static, PhotocraftApp>) -> f32 {
@@ -82,61 +74,21 @@ fn move_to(h: &mut Harness<'static, PhotocraftApp>, p: Pos2) {
     h.run_steps(1);
 }
 
-/// Two primary clicks in a row at the same place: a double-click.
-fn double_click(h: &mut Harness<'static, PhotocraftApp>, x: f32, y: f32) {
-    let p = screen(h, x, y);
-    move_to(h, p);
-    for _ in 0..2 {
-        press(h, p, PointerButton::Primary, true);
-        press(h, p, PointerButton::Primary, false);
-    }
-    h.run_steps(2);
-}
-
 /// A right-button drag of `dy` points (down is positive) from the middle of the canvas.
 fn right_drag(h: &mut Harness<'static, PhotocraftApp>, dy: f32) {
     let p = screen(h, 1000.0, 750.0);
     move_to(h, p);
     press(h, p, PointerButton::Secondary, true);
-    let q = pos2_moved(p, dy);
     for i in 1..=8 {
-        let t = i as f32 / 8.0;
-        move_to(h, p + vec2(0.0, dy * t));
+        move_to(h, p + vec2(0.0, dy * (i as f32 / 8.0)));
     }
-    press(h, q, PointerButton::Secondary, false);
+    press(h, p + vec2(0.0, dy), PointerButton::Secondary, false);
     h.run_steps(2);
-}
-
-fn pos2_moved(p: Pos2, dy: f32) -> Pos2 {
-    p + vec2(0.0, dy)
 }
 
 fn set_pref(h: &mut Harness<'static, PhotocraftApp>, path: &str, value: bool) {
     h.state_mut().run("prefs.set", json!({"path": path, "value": value})).unwrap();
     h.run_steps(2);
-}
-
-#[test]
-fn hand_double_click_centres_the_view_on_the_point_clicked() {
-    let mut h = harness(app_with_photo());
-    h.state_mut().ui.tool = Tool::Hand;
-    h.run_steps(2);
-    assert_eq!(centre(&h), [1000.0, 750.0]);
-    // Inside the window: at 100 % the 868 x 542 canvas shows 434 x 271 points around the centre.
-    double_click(&mut h, 700.0, 600.0);
-    let c = centre(&h);
-    assert!((c[0] - 700.0).abs() < 1.0 && (c[1] - 600.0).abs() < 1.0, "centred on the click: {c:?}");
-    assert_eq!(zoom(&h), 1.0, "the zoom is untouched");
-}
-
-#[test]
-fn hand_double_click_keeps_the_view_when_the_preference_is_off() {
-    let mut h = harness(app_with_photo());
-    set_pref(&mut h, "general.centerOnDoubleClick", false);
-    h.state_mut().ui.tool = Tool::Hand;
-    h.run_steps(2);
-    double_click(&mut h, 700.0, 600.0);
-    assert_eq!(centre(&h), [1000.0, 750.0], "the preference is off: nothing moves");
 }
 
 #[test]

@@ -312,9 +312,6 @@ pub struct General {
     pub zoom_with_scroll_wheel: bool,
     /// Wheel zoom eases over the frames of a notch; off, a notch is one instant ×1.1 step.
     pub animated_zoom: bool,
-    /// Double-clicking the canvas with the Hand puts the point clicked in the middle of the
-    /// window (the zoom stays as it is).
-    pub center_on_double_click: bool,
     /// Holding the right button (a pen's barrel button included) and dragging vertically zooms:
     /// down zooms in, up zooms out. A right-click that doesn't move still opens its menus.
     pub right_drag_zooms: bool,
@@ -337,7 +334,6 @@ impl Default for General {
             skip_transform_when_placing: false,
             zoom_with_scroll_wheel: false,
             animated_zoom: true,
-            center_on_double_click: true,
             right_drag_zooms: true,
             zoom_resizes_windows: false,
             use_legacy_free_transform: false,

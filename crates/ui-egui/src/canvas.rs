@@ -1500,21 +1500,6 @@ fn transform_press_release(
     }
 }
 
-/// Puts the document point under `p` in the middle of the window, keeping the zoom, then clamps
-/// the view the way a pan is clamped. General › Double-Click Centres the View.
-fn centre_view_on(app: &PhotocraftApp, view: &mut View, xf: &ViewXform, p: egui::Pos2, rect: egui::Rect, ppp: f32) {
-    let d = xf.to_doc(p);
-    if !(d[0].is_finite() && d[1].is_finite()) {
-        return;
-    }
-    view.center = [d[0] as f32, d[1] as f32];
-    view.fit_pending = false;
-    view.fill_pending = false;
-    view.zoom_animating = false;
-    view.zoom_anchor = None;
-    crate::scrollbars::clamp_view_with_aspect(view, rect.size(), ppp, app.ui.view.display_aspect());
-}
-
 /// A right-drag in progress: the zoom it started from and the screen point it zooms about.
 #[derive(Clone, Copy)]
 struct RightDragZoom {
@@ -1668,12 +1653,6 @@ fn handle_canvas_tool_clicks(
                     zoom_about(view, xf, p, nz, center, ppp);
                     view.request_zoom_animation(app.session.prefs().general.animated_zoom && nz != display_zoom);
                     view.zoom_anchor = (view.zoom_animating && !center).then_some((doc_anchor, [screen_anchor.x, screen_anchor.y]));
-                }
-                // Double-clicking with the Hand puts the point clicked in the middle of the window
-                // (General › Double-Click Centres the View), keeping the zoom as it is. A single
-                // click only picks the tool.
-                Tool::Hand if response.double_clicked() && app.session.prefs().general.center_on_double_click => {
-                    centre_view_on(app, view, xf, p, rect, ppp);
                 }
                 // A click with the (temporary) Hand does nothing, never the tool underneath.
                 Tool::Hand | Tool::RotateView => {}
