@@ -110,6 +110,25 @@ pub fn pen_end_service() -> Option<photocraft_ui_egui::PenEndFn> {
     Some(Box::new(photocraft_tablet::windows::take_pen_end))
 }
 
+/// The pen barrel as a button (Windows): the pen's own barrel button is no mouse button, so the
+/// pointer hook reports whether it was down when a contact began and presses while hovering.
+#[cfg(target_os = "windows")]
+pub fn pen_barrel_service() -> Option<photocraft_ui_egui::PenBarrelFn> {
+    Some(Box::new(|| {
+        let barrel = photocraft_tablet::windows::take_pen_barrel();
+        photocraft_ui_egui::PenBarrelButton {
+            contact: barrel.contact,
+            hover_pressed: barrel.hover_pressed,
+            hover_released: barrel.hover_released,
+        }
+    }))
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn pen_barrel_service() -> Option<photocraft_ui_egui::PenBarrelFn> {
+    None
+}
+
 #[cfg(not(target_os = "windows"))]
 pub fn pen_end_service() -> Option<photocraft_ui_egui::PenEndFn> {
     None

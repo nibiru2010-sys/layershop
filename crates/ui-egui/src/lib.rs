@@ -216,6 +216,7 @@ pub use input::shortcut_dispatch;
 pub use input::shortcuts;
 use input::single_line_drag;
 pub use input::spring_tools;
+pub use input::pen_barrel::PenBarrelButton;
 pub use input::stylus;
 use input::tool_shortcuts;
 pub use input::touch_twins;
@@ -277,7 +278,7 @@ pub use services::{
     AutomationReadFn, AutomationServices, AutomationWriteFn, AutosaveFn, AutosaveResultsFn, CapsLockFn, CaptionStyleFn, ClipboardGetFn, ClipboardGetSvgFn,
     ClipboardSetFn, ClipboardUnreadableFn, CursorPosFn, DiscardAutosaveFn, EncodePngFn, ExportFn, ExportSettings, ExternalSvgEditor, ExternalSvgSession,
     ExternalVectorSave, ExternalVectorSource, FileStamp, FileStampFn, FormatChoices, ImportFn, Inbox, LastUpdateFn, LoadTextFn, OpenExternalSvgFn, OpenUrlFn,
-    OsEventsFn, PenEndFn, PenScreenFn, PhotoshopShortcutsFn, PlaceInbox, QuitFn, RecoverFn, Recoverable, RightButtonDownFn, SameFileFn, SaveFileFn, SaveTextFn,
+    OsEventsFn, PenBarrelFn, PenEndFn, PenScreenFn, PhotoshopShortcutsFn, PlaceInbox, QuitFn, RecoverFn, Recoverable, RightButtonDownFn, SameFileFn, SaveFileFn, SaveTextFn,
     Services, SystemThemeFn, TabletPollFn, WindowFrameFn, WriteFn,
 };
 pub(crate) use services::{opaque_layer, saves_flat_in_place};

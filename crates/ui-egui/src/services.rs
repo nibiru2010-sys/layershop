@@ -532,6 +532,10 @@ pub type PenScreenFn = Box<dyn Fn() -> Option<[i32; 2]> + Send + Sync>;
 /// Which end of the pen is in use, `Some(true)` = eraser, `None` = no pen ([`Services::pen_end`]).
 pub type PenEndFn = Box<dyn Fn() -> Option<bool> + Send + Sync>;
 
+/// The pen's barrel button as a button ([PenBarrelButton]), drained once per frame (Windows;
+/// elsewhere a pen's barrel arrives as a real right button and this stays None).
+pub type PenBarrelFn = Box<dyn FnMut() -> crate::input::pen_barrel::PenBarrelButton + Send + Sync>;
+
 /// Polls the platform's optional WinTab packet queue into the app's stylus feed (Windows), with
 /// whether the app window is focused (to re-assert WinTab overlap priority on activation).
 pub type TabletPollFn = Box<dyn FnMut(bool)>;
@@ -681,6 +685,9 @@ pub struct Services {
     /// Which end of the pen is in use, where the platform reports it outside the stylus feed
     /// (Windows: the feed carries no pen samples there). Read for the eraser-end tool switch.
     pub pen_end: Option<PenEndFn>,
+    /// The pen's barrel button read as a button rather than a level. A pen's contact is delivered
+    /// as the left button on Windows, so without this its barrel button never right-clicks.
+    pub pen_barrel: Option<PenBarrelFn>,
     /// Where the pen is on the screen, independent of where the window is (Windows: the pen's
     /// pointer messages). A pen moving the window by its title bar follows it (`titlebar`).
     pub pen_screen_px: Option<PenScreenFn>,

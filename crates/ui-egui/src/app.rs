@@ -294,6 +294,20 @@ impl eframe::App for PhotocraftApp {
         // After the control channel's own events (`ui.type`) join the OS's, before any widget.
         widgets::cap_text_events(&mut raw_input.events);
         self.control_click.normalize(&mut raw_input.events, cfg!(target_os = "macos"));
+        // The pen's barrel button is no mouse button: deliver it as the right one (pen_barrel.rs).
+        if let Some(read) = self.services.pen_barrel.as_mut() {
+            let barrel = read();
+            let pointer = raw_input
+                .events
+                .iter()
+                .rev()
+                .find_map(|e| match e {
+                    egui::Event::PointerMoved(pos) => Some(*pos),
+                    _ => None,
+                })
+                .or_else(|| ctx.input(|i| i.pointer.latest_pos()));
+            self.stylus.barrel.rewrite(&mut raw_input.events, barrel, pointer);
+        }
         // A pen held still is no touch screen's press-and-hold right click (stylus.rs).
         let pen_down = self.stylus.pen_contacts.observe(&raw_input.events);
         stylus::pen_hold_is_no_right_click(ctx, pen_down);
