@@ -1500,75 +1500,6 @@ fn transform_press_release(
     }
 }
 
-/// A right-drag in progress: the zoom it started from and the screen point it zooms about.
-#[derive(Clone, Copy)]
-struct RightDragZoom {
-    start_zoom: f32,
-    anchor: egui::Pos2,
-}
-
-/// Points of vertical drag per e-fold of zoom: a 240-point drag down multiplies the zoom by e.
-const RIGHT_DRAG_ZOOM_POINTS: f32 = 240.0;
-
-/// The zoom a right-drag `dy` points down from `start_zoom` asks for: down zooms in, up zooms out,
-/// within the document's zoom range.
-pub(crate) fn drag_zoom(start_zoom: f32, dy: f32, size: [u32; 2]) -> f32 {
-    let start = if start_zoom.is_finite() && start_zoom > 0.0 { start_zoom } else { 1.0 };
-    if !dy.is_finite() {
-        return crate::zoom_levels::clamp(start, size);
-    }
-    let raw = start * (dy / RIGHT_DRAG_ZOOM_POINTS).exp();
-    // A drag far enough to overflow the exponential still asks for the end of the range it
-    // heads to, rather than snapping back to 100 % the way a non-finite zoom would.
-    if raw.is_finite() {
-        crate::zoom_levels::clamp(raw, size)
-    } else if dy > 0.0 {
-        crate::zoom_levels::MAX
-    } else {
-        crate::zoom_levels::min(size)
-    }
-}
-
-/// Drives Preferences › General › Right-Drag Zooms: a right press on the canvas starts the gesture,
-/// a vertical drag past a right-click's reach zooms about the press point, and the release ends it.
-/// Returns true while the button belongs to the gesture, so the caller can keep its release from
-/// opening a menu or picker.
-fn drive_right_drag_zoom(ctx: &egui::Context, response: &egui::Response, view: &mut View, xf: &ViewXform, allowed: bool, ppp: f32) -> bool {
-    let id = response.id.with("canvas-right-drag-zoom");
-    let released = ctx.input(|i| i.pointer.button_released(PointerButton::Secondary));
-    let down = ctx.input(|i| i.pointer.secondary_down());
-    if released || !down || !allowed {
-        ctx.data_mut(|d| d.remove::<RightDragZoom>(id));
-        return false;
-    }
-    let Some(gesture) = ctx.data(|d| d.get_temp::<RightDragZoom>(id)) else {
-        // Not started yet: a press on the canvas begins one, at the point pressed.
-        if ctx.input(|i| i.pointer.button_pressed(PointerButton::Secondary))
-            && response.contains_pointer()
-            && let Some(p) = ctx.input(|i| i.pointer.press_origin()).or_else(|| ctx.input(|i| i.pointer.latest_pos()))
-        {
-            ctx.data_mut(|d| d.insert_temp(id, RightDragZoom { start_zoom: view.zoom, anchor: p }));
-        }
-        return false;
-    };
-    let Some(now) = ctx.input(|i| i.pointer.latest_pos()) else { return false };
-    // Inside a right-click's reach the button is still a click: a small wobble never zooms.
-    let reach = 3.0 * ctx.options(|o| o.input_options.max_click_dist);
-    let dy = now.y - gesture.anchor.y;
-    if dy.abs() <= reach {
-        return false;
-    }
-    let target = drag_zoom(gesture.start_zoom, dy, view.doc_size);
-    if (target - view.zoom).abs() > f32::EPSILON * target.abs().max(1.0) {
-        zoom_about(view, xf, gesture.anchor, target, false, ppp);
-        view.fit_pending = false;
-        view.fill_pending = false;
-        view.zoom_animating = false;
-        view.zoom_anchor = None;
-    }
-    true
-}
-
 /// Dispatches discrete pointer click and release events to active tools with view transform context.
 fn handle_canvas_tool_clicks(
     app: &mut PhotocraftApp,
@@ -2689,24 +2620,6 @@ pub fn canvas_view(app: &mut PhotocraftApp, ui: &mut egui::Ui, idx: usize, rect:
     ctx.data_mut(|d| d.insert_temp(right_pan_id, right_held && right_space_pan && hand_drag));
     // A pan the right button took part in used it: its release is no right-click.
     if hand_drag && right_held {
-        crate::paint_mouse::right_press_used(&response);
-    }
-    // Preferences › General › Right-Drag Zooms: holding the right button (a pen's barrel button
-    // comes through as one) and dragging vertically zooms about the point pressed — down zooms in,
-    // up zooms out. A right-click that doesn't move stays a right-click, so its menus and erasing
-    // are untouched; Space, the selected Hand, the brush resize gesture, a tool whose mode menu
-    // opens on the right press, and Tools › right-click erases all keep what they already do.
-    let right_mods = crate::workspace_ui::sticky_mods(app, ctx.input(|i| i.modifiers));
-    let right_zoom_free = app.session.prefs().general.right_drag_zooms
-        && !under_dialog
-        && !hand_pan
-        && !right_space_pan
-        && !menu_dismiss_press
-        && !crate::paint_mouse::right_erases(app, tool)
-        && !(crate::brush_resize::applies(tool) && crate::brush_resize::is_right_gesture(right_mods))
-        && !crate::brush_mode_menu::opens_on(app, tool, right_mods, None);
-    if drive_right_drag_zoom(&ctx, &response, &mut view, &xf, right_zoom_free, ppp) {
-        // The gesture owns the button: its release must not open a canvas menu or picker.
         crate::paint_mouse::right_press_used(&response);
     }
     // Preferences › Tools › Enable Flick Panning: a Hand drag let go while moving glides on.

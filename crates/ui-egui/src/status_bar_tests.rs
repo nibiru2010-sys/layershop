@@ -62,7 +62,47 @@ fn status_bar_controls_sit_inside_the_bar_with_even_margins() {
     }
 }
 
+/// The zoom field sits in the middle of the bar, not pinned to the far left, when the document
+/// labels leave it room: a fixed left anchor put it under the reading-start edge.
+#[test]
+fn the_zoom_field_is_centred_when_the_labels_leave_it_room() {
+    for kind in ThemeKind::ALL {
+        let t = Tokens::for_kind(kind);
+        if t.pro {
+            continue;
+        }
+        let h = harness(kind);
+        let (bar_h, _) = crate::panels::status_bar_heights(&t);
+        let bottom = h.ctx.data(|d| d.get_temp::<f32>(bottom_id())).unwrap();
+        let bar = Rect::from_min_max(pos2(0.0, bottom - bar_h), pos2(SIZE.x, bottom));
+        let number = h.get_by_role(egui::accesskit::Role::SpinButton).rect();
+        assert!(
+            (number.center().x - bar.center().x).abs() < 40.0,
+            "{kind:?}: the zoom field {number:?} is not in the middle of the bar {bar:?}"
+        );
+    }
+}
+
+/// A status message too long for the bar moves the zoom field after the labels instead of under
+/// them, and keeps it clear of the Fit button at the far end.
+#[test]
+fn a_long_status_message_keeps_the_zoom_field_off_the_fit_button() {
+    for kind in ThemeKind::ALL {
+        let t = Tokens::for_kind(kind);
+        if t.pro {
+            continue;
+        }
+        let mut h = harness(kind);
+        h.state_mut().ui.status = "Rendered 24 frames of the timeline into the export folder".into();
+        h.run_steps(2);
+        let number = h.get_by_role(egui::accesskit::Role::SpinButton).rect();
+        let fit = h.get_by_label("Fit").rect();
+        assert!(number.right() <= fit.left(), "{kind:?}: the zoom field {number:?} runs into Fit {fit:?}");
+    }
+}
+
 fn cursor_warp(h: &Harness<'_, PhotocraftApp>) -> Option<egui::Pos2> {
+
     h.output().viewport_output.values().flat_map(|v| &v.commands).find_map(|c| match c {
         egui::ViewportCommand::CursorPosition(p) => Some(*p),
         _ => None,

@@ -312,9 +312,6 @@ pub struct General {
     pub zoom_with_scroll_wheel: bool,
     /// Wheel zoom eases over the frames of a notch; off, a notch is one instant ×1.1 step.
     pub animated_zoom: bool,
-    /// Holding the right button (a pen's barrel button included) and dragging vertically zooms:
-    /// down zooms in, up zooms out. A right-click that doesn't move still opens its menus.
-    pub right_drag_zooms: bool,
     pub zoom_resizes_windows: bool,
     pub use_legacy_free_transform: bool,
     pub auto_show_home_screen: bool,
@@ -334,7 +331,6 @@ impl Default for General {
             skip_transform_when_placing: false,
             zoom_with_scroll_wheel: false,
             animated_zoom: true,
-            right_drag_zooms: true,
             zoom_resizes_windows: false,
             use_legacy_free_transform: false,
             auto_show_home_screen: true,

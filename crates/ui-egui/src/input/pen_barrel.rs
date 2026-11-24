@@ -93,8 +93,8 @@ impl BarrelClicks {
         }
     }
 
-    /// A pen contact is being delivered as the right button (tests, and the canvas's Alt+drag
-    /// guard).
+    /// A pen contact is being delivered as the right button.
+    #[cfg(test)]
     pub(crate) fn converts(&self) -> bool {
         self.converted
     }

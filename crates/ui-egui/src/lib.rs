@@ -824,7 +824,6 @@ mod brush_picker_escape_tests;
 #[cfg(test)]
 mod cam_no_pixels_alert_tests;
 #[cfg(test)]
-mod canvas_nav_gestures_tests;
 #[cfg(test)]
 mod eyedropper_context_menu_tests;
 #[cfg(test)]
