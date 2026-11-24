@@ -44,6 +44,12 @@ pub(super) fn humanize(key: &str) -> String {
         "columnWidth" => return "Column width".into(),
         _ => {}
     }
+    // Navigation gestures (General): the wording says what the gesture does, not what it sets.
+    match key {
+        "centerOnDoubleClick" => return "Double-Click Centres the View".into(),
+        "rightDragZooms" => return "Right-Drag Zooms".into(),
+        _ => {}
+    }
     // These controls appear only for WebP, so reuse the existing translated labels.
     if key == "webpLossless" {
         return "Lossless".into();
