@@ -11,3 +11,6 @@ target/
 /craft-fonts
 *.log
 __pycache__/
+
+# Machine-specific layout for the tools/ scripts; create from tools/local-layout.example.ps1
+/tools/local-layout.ps1
