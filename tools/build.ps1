@@ -22,12 +22,14 @@ $env:CARGO_TERM_COLOR = 'never'
 # Build paths never reach a published binary: Rust writes source locations into panic metadata,
 # which would otherwise carry this machine's user folder and cargo cache into every release.
 # The prefixes are derived at build time (never written down), so a build from any machine is
-# clean. Set them only when unset, so an explicit RUSTFLAGS in the environment still wins.
+# clean. The replacements are NON-EMPTY on purpose: remapping a prefix to nothing makes some
+# rewritten paths unresolvable and the build dies at the first crate ("only metadata stub found
+# for `std`"). Set only when unset, so an explicit RUSTFLAGS in the environment still wins.
 if (-not $env:RUSTFLAGS) {
   $remap = @(
-    "--remap-path-prefix=$env:USERPROFILE="
-    "--remap-path-prefix=$($env:CARGO_TARGET_DIR)="
-    "--remap-path-prefix=$proj="
+    "--remap-path-prefix=$env:USERPROFILE\\.cargo=/cargo"
+    "--remap-path-prefix=$($env:CARGO_TARGET_DIR)=/build"
+    "--remap-path-prefix=$proj=/src"
   )
   $env:RUSTFLAGS = ($remap -join ' ')
 }
